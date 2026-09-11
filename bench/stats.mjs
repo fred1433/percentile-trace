@@ -1,11 +1,16 @@
 /**
- * Percentiles, nearest rank, on the sorted sample. No interpolation and no
- * average anywhere in this file: p95 is the value of a real request that
- * happened, which is the only thing a budget can be argued about later.
+ * Percentiles, nearest rank, on the sorted sample.
  *
- * With n samples, the p-th percentile is the ceil(p/100 * n)-th value.
- * That means p99 of 50 samples is the slowest of the 50, and the script says
- * so rather than printing a number that pretends to more resolution than it has.
+ * There is no average anywhere in this repository, on purpose. A mean over a
+ * long tailed latency distribution is the one number that describes nobody:
+ * it moves when the tail moves and it moves when the floor moves, and it never
+ * says which. p95 and p99 are values of requests that actually happened, so a
+ * budget written against them can be argued about later.
+ *
+ * With n samples the p-th percentile is the ceil(p/100 * n)-th value. p99 of
+ * 50 samples is therefore just the slowest of the 50, and the summary says so
+ * in `p99IsMax` rather than printing a number with more resolution than the
+ * sample can carry.
  */
 export function percentile(values, p) {
   if (values.length === 0) return null;
@@ -14,7 +19,7 @@ export function percentile(values, p) {
   return sorted[Math.min(Math.max(rank, 1), sorted.length) - 1];
 }
 
-/** The smallest n for which the p-th percentile is not just the maximum. */
+/** The smallest sample size at which the p-th percentile is not simply the maximum. */
 export function resolvedAt(p) {
   return Math.ceil(100 / (100 - p)) + 1;
 }
@@ -23,11 +28,10 @@ export function summarise(values) {
   return {
     n: values.length,
     min: values.length ? Math.min(...values) : null,
-    p50: percentile(values, 50),
     p95: percentile(values, 95),
     p99: percentile(values, 99),
     max: values.length ? Math.max(...values) : null,
-    p99IsMax: values.length < resolvedAt(99),
+    p99IsMax: values.length > 0 && values.length < resolvedAt(99),
   };
 }
 

@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 /**
- * The browser end of the trace. A real Chromium loads the deployed page N
- * times and reports what the page itself experienced: TTFB and LCP from the
- * web-vitals library, plus the resource timing of each API call the page made.
+ * The headline population: what a visitor experiences.
  *
- * Every load is a fresh context with an empty cache, so nothing is served from
- * a warm browser cache and called a measurement.
+ * One observation is one click. The clock starts on the click on the watchlist
+ * link and stops when the expected rows are on screen, verified: the right
+ * number of rows, on the right account, and the first id the request returned.
+ * A run where the content does not verify is a failure and is counted as one,
+ * not quietly averaged in.
  *
- *   node bench/browser.mjs --target https://percentile-trace.theaipipe.com --loads 15
+ * Load model: one browser, one page, one click at a time, a fresh context per
+ * observation so nothing is served from a warm browser cache. Link prefetch is
+ * left at the Next.js default, because that is what a visitor gets.
+ *
+ *   node bench/browser.mjs --target https://percentile-trace.theaipipe.com \
+ *        --windows 3 --per-window 12 --from "Asuncion, Paraguay"
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -18,103 +24,199 @@ import { summarise, roundAll } from "./stats.mjs";
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = join(here, "out");
 
-const args = Object.fromEntries(
-  process.argv.slice(2).flatMap((a, i, all) =>
-    a.startsWith("--")
-      ? [[a.slice(2), all[i + 1] && !all[i + 1].startsWith("--") ? all[i + 1] : "true"]]
-      : [],
-  ),
-);
+const args = parseArgs(process.argv.slice(2));
 const target = (args.target ?? "http://localhost:3000").replace(/\/$/, "");
-const loads = Number(args.loads ?? 15);
+const windows = Number(args.windows ?? 3);
+const perWindow = Number(args["per-window"] ?? 12);
 const from = args.from ?? "unspecified";
+const conditions = (args.conditions ?? "before,after").split(",");
 
-async function main() {
-  mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch();
-  const samples = [];
+const TITLES = {
+  before: "Membership subquery",
+  after: "Account claim",
+  "after-noindex": "Account claim, index removed",
+};
 
-  for (let i = 0; i < loads; i++) {
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-    const page = await ctx.newPage();
+const rawPath = join(OUT, `browser-raw-${new Date().toISOString().replace(/[:.]/g, "-")}.jsonl`);
+
+async function observe(browser, variant, windowIndex) {
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await ctx.newPage();
+
+  // Stamp the moment the streamed rows land, from inside the page, so the end
+  // of the measurement is the DOM commit and not a polling interval.
+  await page.addInitScript(() => {
+    // @ts-nocheck
+    window.__ptRowsAt = null;
+    window.__ptClickAt = null;
+    const mark = () => {
+      const el = document.querySelector("[data-rows-ready]");
+      if (el && window.__ptRowsAt === null) window.__ptRowsAt = performance.now();
+    };
+    new MutationObserver(mark).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
+    document.addEventListener(
+      "click",
+      () => {
+        if (window.__ptClickAt === null) window.__ptClickAt = performance.now();
+      },
+      true,
+    );
+  });
+
+  const started = new Date().toISOString();
+  try {
     await page.goto(target, { waitUntil: "load" });
+    // Let the default link prefetch settle, so every observation starts from
+    // the same state rather than racing it.
+    await page.waitForTimeout(1500);
 
-    // The page reports its own LCP; give the observer a moment to settle, then
-    // ask the browser for the navigation entry rather than timing it ourselves.
-    await page.waitForTimeout(1200);
+    await page.click(`a[data-open="${variant}"]`);
+    await page.waitForSelector("[data-rows-ready]", { timeout: 60_000 });
 
-    const nav = await page.evaluate(() => {
-      const n = performance.getEntriesByType("navigation")[0];
+    const m = await page.evaluate(() => {
+      const el = document.querySelector("[data-rows-ready]");
+      const nav = performance.getEntriesByType("navigation")[0];
       const lcp = performance.getEntriesByType("largest-contentful-paint").pop();
       return {
-        ttfb: n ? n.responseStart - n.startTime : null,
-        domContentLoaded: n ? n.domContentLoadedEventEnd - n.startTime : null,
-        loadEvent: n ? n.loadEventEnd - n.startTime : null,
-        transferSize: n ? n.transferSize : null,
-        lcp: lcp ? lcp.startTime : null,
+        clickAt: window.__ptClickAt,
+        rowsAt: window.__ptRowsAt,
+        rowsCount: Number(el?.getAttribute("data-rows-count") ?? 0),
+        firstId: el?.getAttribute("data-first-id") ?? null,
+        traceId: el?.getAttribute("data-trace-id") ?? null,
+        queryMs: Number(el?.getAttribute("data-query-ms") ?? 0),
+        landingTtfb: nav ? nav.responseStart - nav.startTime : null,
+        landingLcp: lcp ? lcp.startTime : null,
+        url: location.pathname,
       };
     });
 
-    // Then the trace itself, driven the way a visitor drives it.
-    await page.getByRole("button", { name: /run the trace/i }).click();
-    await page.waitForFunction(
-      () => document.body.innerText.includes("network"),
-      undefined,
-      { timeout: 30_000 },
-    );
-    const api = await page.evaluate(() =>
-      performance
-        .getEntriesByType("resource")
-        .filter((e) => e.name.includes("/api/trace"))
-        .map((e) => ({
-          arm: new URL(e.name).searchParams.get("arm"),
-          ttfb: e.responseStart - e.requestStart,
-          duration: e.duration,
-        })),
-    );
+    const clickToRowsMs =
+      m.clickAt !== null && m.rowsAt !== null ? m.rowsAt - m.clickAt : null;
+    const verified =
+      m.rowsCount === 50 && !!m.firstId && m.url === `/watchlist/${variant}`;
 
-    samples.push({ ...nav, api });
-    process.stdout.write(".");
+    return {
+      ok: verified && clickToRowsMs !== null,
+      variant,
+      windowIndex,
+      startedAt: started,
+      clickToRowsMs,
+      queryMs: m.queryMs,
+      rowsCount: m.rowsCount,
+      firstId: m.firstId,
+      traceId: m.traceId,
+      landingTtfb: m.landingTtfb,
+      landingLcp: m.landingLcp,
+      verified,
+    };
+  } catch (e) {
+    return { ok: false, variant, windowIndex, startedAt: started, error: String(e) };
+  } finally {
     await ctx.close();
   }
-  process.stdout.write("\n");
+}
+
+async function main() {
+  mkdirSync(OUT, { recursive: true });
+  const env = await fetch(`${target}/api/health`, { cache: "no-store" })
+    .then((r) => r.json())
+    .catch(() => ({}));
+  const browser = await chromium.launch();
+  const version = browser.version();
+  const all = [];
+  const failures = [];
+  const startedAt = new Date().toISOString();
+
+  console.log(`target      ${target}`);
+  console.log(`conditions  ${conditions.join(", ")}`);
+  console.log(`windows     ${windows} x ${perWindow} per condition\n`);
+
+  for (let w = 0; w < windows; w++) {
+    const order = w % 2 === 0 ? conditions : [...conditions].reverse();
+    for (const variant of order) {
+      process.stdout.write(`window ${w + 1} ${variant.padEnd(14)}`);
+      for (let i = 0; i < perWindow; i++) {
+        const r = await observe(browser, variant, w);
+        (r.ok ? all : failures).push(r);
+        appendFileSync(rawPath, JSON.stringify(r) + "\n");
+        process.stdout.write(r.ok ? "." : "x");
+      }
+      process.stdout.write("\n");
+    }
+  }
   await browser.close();
 
-  const pick = (k) => samples.map((s) => s[k]).filter((v) => typeof v === "number");
-  const apiOf = (arm, k) =>
-    samples.flatMap((s) => s.api.filter((a) => a.arm === arm).map((a) => a[k]));
+  const byCondition = {};
+  for (const variant of conditions) {
+    const rows = all.filter((r) => r.variant === variant);
+    byCondition[TITLES[variant] ?? variant] = {
+      variant,
+      attempted: rows.length + failures.filter((f) => f.variant === variant).length,
+      failed: failures.filter((f) => f.variant === variant).length,
+      clientMs: roundAll(summarise(rows.map((r) => r.clickToRowsMs))),
+      queryMs: roundAll(summarise(rows.map((r) => r.queryMs))),
+      landingTtfb: roundAll(summarise(rows.map((r) => r.landingTtfb))),
+      landingLcp: roundAll(summarise(rows.map((r) => r.landingLcp))),
+      verifiedRows: [...new Set(rows.map((r) => r.rowsCount))],
+      firstIds: [...new Set(rows.map((r) => r.firstId))],
+    };
+  }
 
   const run = {
-    at: new Date().toISOString(),
+    at: startedAt,
+    finishedAt: new Date().toISOString(),
     target,
     from,
-    loads,
-    engine: "chromium (playwright), fresh context per load",
-    page: {
-      ttfb: roundAll(summarise(pick("ttfb"))),
-      lcp: roundAll(summarise(pick("lcp"))),
-      loadEvent: roundAll(summarise(pick("loadEvent"))),
-    },
-    api: {
-      "no-index": { ttfb: roundAll(summarise(apiOf("no-index", "ttfb"))) },
-      indexed: { ttfb: roundAll(summarise(apiOf("indexed", "ttfb"))) },
-    },
+    population: "browser clicks on the watchlist link, one click per observation",
+    metric:
+      "From the click on the watchlist link to the expected rows on screen, verified as 50 rows with the first id the request returned, measured by Chromium.",
+    loadModel:
+      "Closed loop, one click at a time, a fresh browser context per observation, link prefetch at the Next.js default. Failed and unverified observations are counted.",
+    engine: `chromium ${version} via playwright`,
+    windows,
+    perWindow,
+    functionRegion: env.functionRegion ?? "unknown",
+    databaseRegion: env.databaseRegion ?? "unknown",
+    commit: env.commit ?? "unknown",
+    deploymentId: env.deploymentId ?? "unknown",
+    attempted: all.length + failures.length,
+    failed: failures.length,
+    rawValues: rawPath.replace(join(here, ".."), "."),
+    conditions: byCondition,
   };
 
   writeFileSync(join(OUT, "browser.json"), JSON.stringify(run, null, 2));
-  console.log(`\n${target}, ${loads} loads, measured from ${from}`);
-  for (const [k, v] of Object.entries(run.page)) {
-    console.log(`  page ${k.padEnd(14)} p50 ${fmt(v.p50)}  p95 ${fmt(v.p95)}  p99 ${fmt(v.p99)}`);
-  }
-  for (const [arm, v] of Object.entries(run.api)) {
+  // The page reads this one. It carries the headline population only, so a
+  // number on the site is always the one a visitor would have experienced.
+  writeFileSync(join(OUT, "summary.json"), JSON.stringify({ runs: [run] }, null, 2));
+  console.log(`\n${run.metric}`);
+  for (const [name, c] of Object.entries(byCondition)) {
     console.log(
-      `  api  ${arm.padEnd(14)} p50 ${fmt(v.ttfb.p50)}  p95 ${fmt(v.ttfb.p95)}  p99 ${fmt(v.ttfb.p99)}`,
+      `  ${name.padEnd(32)} n ${String(c.clientMs.n).padStart(3)}  p95 ${fmt(c.clientMs.p95)}  p99 ${fmt(c.clientMs.p99)}${c.clientMs.p99IsMax ? "  (exploratory p99)" : ""}`,
     );
   }
-  console.log("\nwritten: bench/out/browser.json");
+  console.log(`\nwritten: bench/out/browser.json, ${run.rawValues}`);
 }
 
-const fmt = (v) => `${v === null ? "-" : v.toFixed(1)} ms`.padStart(10);
+const fmt = (v) => `${v === null ? "-" : v.toFixed(0)} ms`.padStart(9);
+
+function parseArgs(argv) {
+  const out = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].startsWith("--")) {
+      const key = argv[i].slice(2);
+      const next = argv[i + 1];
+      if (next && !next.startsWith("--")) {
+        out[key] = next;
+        i++;
+      } else out[key] = "true";
+    }
+  }
+  return out;
+}
 
 main().catch((e) => {
   console.error(e);

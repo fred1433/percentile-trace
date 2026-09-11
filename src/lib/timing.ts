@@ -43,13 +43,18 @@ export class Stopwatch {
   }
 }
 
-/** True only for the first request served by this function instance. */
-let firstRequestServed = false;
-const bootedAt = Date.now();
+/**
+ * What this actually knows: whether this module instance has served a request
+ * before, and how long ago it was loaded. That is not the same claim as "this
+ * was a cold start", which would need the platform to say so, and this file
+ * does not pretend to know it.
+ */
+let servedOne = false;
+const loadedAt = Date.now();
 const instanceId = Math.random().toString(36).slice(2, 10);
 
 export function instanceState() {
-  const cold = !firstRequestServed;
-  firstRequestServed = true;
-  return { cold, instanceId, uptimeMs: Date.now() - bootedAt };
+  const firstOnInstance = !servedOne;
+  servedOne = true;
+  return { firstOnInstance, instanceId, instanceAgeMs: Date.now() - loadedAt };
 }

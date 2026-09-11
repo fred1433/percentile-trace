@@ -6,32 +6,65 @@ on:
   workflow_dispatch:
   schedule:
     # Monday 13:00 UTC, so a regression that arrives with a platform change is
-    # found by the guard rather than by a visitor.
+    # found by the guard and not by a visitor.
     - cron: "0 13 * * 1"
 
+concurrency:
+  group: perf-budget
+  cancel-in-progress: false
+
+env:
+  PT_TARGET: https://percentile-trace.theaipipe.com
+
 jobs:
-  bench:
+  budget:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      # A budget checked against the previous deployment proves nothing about
+      # this commit. Wait until the live deployment is the one being tested.
+      - name: Wait for this commit to be live
+        run: |
+          for i in $(seq 1 60); do
+            live=$(curl -fsS "$PT_TARGET/api/health" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).commit))')
+            echo "attempt $i: live commit $live, wanted ${{ github.sha }}"
+            [ "$live" = "${{ github.sha }}" ] && exit 0
+            sleep 10
+          done
+          echo "The deployment carrying this commit did not come up in ten minutes."
+          exit 1
+
+      - name: Install the driver used by the tests
+        run: npm ci --omit=dev --ignore-scripts
+
+      - name: Isolation and same result tests
+        if: ${{ env.DATABASE_URL_SESSION != '' }}
+        env:
+          DATABASE_URL_SESSION: ${{ secrets.DATABASE_URL_SESSION }}
+        run: node --test "tests/*.test.mjs"
+
       - name: Bench the deployment
         run: >
-          node bench/run.mjs
-          --target ${{ vars.PT_TARGET || 'https://percentile-trace.theaipipe.com' }}
-          --samples 60
+          node bench/http.mjs
+          --target "$PT_TARGET"
+          --windows 2 --per-window 60
           --from "github actions, ubuntu-latest"
-          --label "ci"
+          --label "ci ${{ github.sha }}"
+
       - name: Check the committed budget
         run: node bench/check-budget.mjs
+
       - name: Keep the run
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bench-output
+          name: bench-output-${{ github.sha }}
           path: |
-            bench/out/summary.json
-            bench/out/last-run.md
-          retention-days: 30
+            bench/out/http.json
+            bench/out/http.md
+            bench/out/http-raw-*.jsonl
+          retention-days: 90

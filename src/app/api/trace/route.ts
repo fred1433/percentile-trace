@@ -1,101 +1,96 @@
 import { NextRequest } from "next/server";
-import { sql, DB_REGION } from "@/lib/db";
-import { Stopwatch, instanceState } from "@/lib/timing";
+import { DB_REGION } from "@/lib/db";
+import { VARIANTS, isVariant, readWatchlist, safeTraceId, WINDOW_DAYS, PAGE_SIZE } from "@/lib/watchlist";
+import { withObservation } from "@/lib/observation";
+import { instanceState } from "@/lib/timing";
 
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
-const ARMS = {
-  "no-index": "events_no_index",
-  indexed: "events_indexed",
-} as const;
-
-type Arm = keyof typeof ARMS;
-
+/**
+ * The HTTP population. One request, one variant, every duration the function
+ * measured about itself, and the spans the request produced.
+ *
+ * Nothing here is derived by subtracting one measurement from another. What
+ * the client observes and what the function observes are two numbers about two
+ * different things and they are reported as two numbers.
+ */
 export async function GET(req: NextRequest) {
-  const w = new Stopwatch();
-  const { cold, instanceId, uptimeMs } = instanceState();
+  const started = performance.now();
+  const { firstOnInstance, instanceId, instanceAgeMs } = instanceState();
 
   const params = req.nextUrl.searchParams;
-  const arm = (params.get("arm") ?? "indexed") as Arm;
-  const tenant = clampInt(params.get("tenant"), 1, 64, 17);
-  const days = clampInt(params.get("days"), 1, 180, 30);
+  const variant = params.get("variant") ?? "after";
+  const days = clampInt(params.get("days"), 1, 180, WINDOW_DAYS);
+  const withSpans = params.get("spans") === "1";
 
-  if (!(arm in ARMS)) {
-    return json({ error: "arm must be no-index or indexed" }, 400, {});
+  if (!isVariant(variant)) {
+    return json({ error: `variant must be one of ${Object.keys(VARIANTS).join(", ")}` }, 400, {});
   }
 
-  const table = ARMS[arm];
-  const since = new Date(Date.UTC(2026, 8, 11) - days * 86400_000);
+  // Vercel stamps every request with an id that also appears in its runtime
+  // log. The raw value goes back in a header; a sanitised copy goes into the
+  // SQL comment, so a log line, a pg_stat_statements entry and a request seen
+  // in the browser are the same request rather than three plausible neighbours.
+  const rawVercelId = req.headers.get("x-vercel-id");
+  const traceId = safeTraceId(rawVercelId ?? localTraceId());
 
-  w.mark("parse");
+  const { reading, spans } = await withObservation(async (collector) => {
+    const reading = await readWatchlist(variant, traceId, days);
+    return { reading, spans: collector.spans };
+  });
 
-  let connMs = 0;
-  let dbMs = 0;
-  let rows: Row[] = [];
-  const tConn = performance.now();
-
-  const conn = await sql.reserve();
-  connMs = performance.now() - tConn;
-
-  try {
-    const tDb = performance.now();
-    rows = (await conn.unsafe(
-      `select id, occurred_at, kind, amount_cents, label
-         from trace.${table}
-        where tenant_id = $1
-          and occurred_at >= $2
-        order by occurred_at desc
-        limit 50`,
-      [tenant, since],
-    )) as unknown as Row[];
-    dbMs = performance.now() - tDb;
-  } finally {
-    conn.release();
-  }
-
-  w.add("conn", connMs, cold ? "new connection" : "pooled");
-  w.add("db", dbMs, arm === "indexed" ? "index scan" : "seq scan");
+  const handlerMs = performance.now() - started;
+  const meta = VARIANTS[variant];
 
   const body = {
-    arm,
-    table: `trace.${table}`,
-    tenant,
-    days,
-    rowsReturned: rows.length,
-    newestAt: rows[0]?.occurred_at ?? null,
-    sample: rows.slice(0, 3),
+    variant,
+    table: `trace.${meta.table}`,
+    policy: meta.policy,
+    indexed: meta.indexed,
+    path: "postgres over the supavisor transaction pooler",
+    params: { days, pageSize: PAGE_SIZE, accountId: 12 },
+    rowsReturned: reading.rows.length,
+    firstId: reading.rows[0]?.id ?? null,
+    lastId: reading.rows.at(-1)?.id ?? null,
+    accountIds: [...new Set(reading.rows.map((r) => r.account_id))],
+    newestAt: reading.rows[0]?.event_at ?? null,
+    sample: reading.rows.slice(0, 3),
+    statement: reading.statement,
     server: {
-      connMs: round(connMs),
-      dbMs: round(dbMs),
+      handlerMs: round(handlerMs),
+      connectMs: round(reading.connectMs),
+      claimsMs: round(reading.claimsMs),
+      queryMs: round(reading.queryMs),
       functionRegion: process.env.VERCEL_REGION ?? "local",
       databaseRegion: DB_REGION,
-      cold,
+      firstOnInstance,
       instanceId,
-      instanceUptimeMs: uptimeMs,
+      instanceAgeMs,
+      traceId: reading.traceId,
+      vercelId: rawVercelId,
+      commit: process.env.VERCEL_GIT_COMMIT_SHA ?? "local",
+      deploymentId: process.env.VERCEL_DEPLOYMENT_ID ?? "local",
+      nodeVersion: process.version,
     },
+    ...(withSpans ? { spans } : {}),
   };
 
-  w.mark("serialize");
-
   return json(body, 200, {
-    "Server-Timing": w.header(),
-    "x-pt-arm": arm,
+    "Server-Timing": [
+      `connect;dur=${reading.connectMs.toFixed(2)}`,
+      `claims;dur=${reading.claimsMs.toFixed(2)}`,
+      `query;dur=${reading.queryMs.toFixed(2)};desc="${meta.title}"`,
+      `handler;dur=${handlerMs.toFixed(2)}`,
+    ].join(", "),
+    "x-pt-variant": variant,
+    "x-pt-trace-id": reading.traceId,
+    "x-pt-vercel-id": rawVercelId ?? "none",
     "x-pt-region": process.env.VERCEL_REGION ?? "local",
     "x-pt-db-region": DB_REGION,
-    "x-pt-cold": cold ? "1" : "0",
+    "x-pt-first-on-instance": firstOnInstance ? "1" : "0",
     "x-pt-instance": instanceId,
-    "x-pt-rows": String(rows.length),
+    "x-pt-rows": String(reading.rows.length),
+    "x-pt-commit": process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
   });
 }
-
-type Row = {
-  id: string;
-  occurred_at: string;
-  kind: string;
-  amount_cents: number;
-  label: string;
-};
 
 function json(body: unknown, status: number, headers: Record<string, string>) {
   return new Response(JSON.stringify(body), {
@@ -109,12 +104,12 @@ function json(body: unknown, status: number, headers: Record<string, string>) {
   });
 }
 
+const localTraceId = () => `local::${Math.random().toString(36).slice(2, 10)}`;
+
 function clampInt(raw: string | null, min: number, max: number, fallback: number) {
   const n = Number.parseInt(raw ?? "", 10);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
 }
 
-function round(n: number) {
-  return Math.round(n * 100) / 100;
-}
+const round = (n: number) => Math.round(n * 100) / 100;
