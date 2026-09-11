@@ -1,24 +1,27 @@
 {
-  "note": "Budgets are set on segments the server measures about itself, never on the end to end total. The total depends on where the bench happens to run, so a budget on it would fail for a reason that has nothing to do with the deployment. What is guarded here is the part the deployment owns.",
-  "guarded": "the indexed arm, which is the fixed one. The no-index arm is deliberately slow and is measured, not guarded.",
+  "guards": "The fixed watchlist, at /api/trace?variant=after, on the production deployment. The before and after-noindex conditions are measured and reported, never guarded: one is the defect being kept alive for comparison and the other is a counterfactual.",
+  "scope": "This detects regressions covered by this scenario and this budget. It says nothing about behaviour under concurrency, about other accounts, about other query shapes, or about any region other than the one the deployment runs in.",
+  "measuredOn": "Segments the server measures about itself. An end to end number depends on where the bench runs, so a budget on it would fail for reasons that have nothing to do with the deployment.",
+  "margin": "budget = max(p99 * 1.5, p99 + 2 * (p99 - p95)), computed by bench/propose-budget.mjs from the run of 2026-09-11 (1000 samples after warm up, from Asuncion, function iad1, database us-east-1). A steady segment gets a tight budget and a jittery one gets room in proportion to how much it moved.",
+  "minimumSamples": 100,
+  "maximumFailures": 1,
+  "notGuarded": {
+    "connectMs": "Bimodal by nature: a pooled connection costs a fraction of a millisecond and a newly opened one costs around two hundred. A single p95 budget over the two would either be flaky or meaningless, so this segment is reported and not guarded."
+  },
   "budgets": [
     {
-      "arm": "indexed",
-      "segment": "db",
-      "p95Ms": 12,
-      "why": "one index scan plus the round trip from the function to the database. A plan change or a function moved away from the database both land here first."
+      "condition": "after",
+      "segment": "queryMs",
+      "p95Ms": 17,
+      "observed": { "p95": 9.5, "p99": 11.0, "n": 1000, "on": "2026-09-11" },
+      "why": "One index scan plus the round trip from the function to the database. A policy that stops being index friendly, an index that gets dropped, a function moved away from the database: all three land here first."
     },
     {
-      "arm": "indexed",
-      "segment": "conn",
-      "p95Ms": 25,
-      "why": "connection acquisition. A pool that stops being reused shows up as this number rising while the query stays flat."
-    },
-    {
-      "arm": "indexed",
-      "segment": "fn",
-      "p95Ms": 40,
-      "why": "everything the function spends, the query included."
+      "condition": "after",
+      "segment": "handlerMs",
+      "p95Ms": 53,
+      "observed": { "p95": 28.86, "p99": 35.33, "n": 1000, "on": "2026-09-11" },
+      "why": "Everything the function spends, the query included. Catches a regression that moves out of the query and into the handler."
     }
   ]
 }

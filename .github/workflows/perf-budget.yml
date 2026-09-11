@@ -42,7 +42,6 @@ jobs:
         run: npm ci --omit=dev --ignore-scripts
 
       - name: Isolation and same result tests
-        if: ${{ env.DATABASE_URL_SESSION != '' }}
         env:
           DATABASE_URL_SESSION: ${{ secrets.DATABASE_URL_SESSION }}
         run: node --test "tests/*.test.mjs"

@@ -99,8 +99,13 @@ create policy account_read on trace.watchlist_after_noindex
 
 -- pg_stat_statements is readable only by privileged roles. The runtime role
 -- reads this project's own statements through a view owned by a role that can.
--- It is used to identify a statement and corroborate the work it did. It is
--- never used to produce a percentile: it exposes aggregates.
+--
+-- It is used to identify a statement and corroborate the work it did, never to
+-- produce a percentile: it exposes calls, a mean, a standard deviation and two
+-- extremes, and none of those is a p95. It also does not separate requests by
+-- the trace id in the SQL comment, because it keys on the normalised parse tree
+-- (measured in bench/out/trace-link.json). pg_stat_activity is where a single
+-- request in flight is matched to its statement.
 drop view if exists trace.query_stats;
 create view trace.query_stats
 with (security_invoker = false) as

@@ -33,6 +33,7 @@ const from = args.from ?? "unspecified";
 const conditions = (args.conditions ?? "before,after,after-noindex").split(",");
 const label = args.label ?? "";
 const timeoutMs = Number(args.timeout ?? 20000);
+const outName = args["out-name"] ?? "http.json";
 
 const rawPath = join(OUT, `http-raw-${new Date().toISOString().replace(/[:.]/g, "-")}.jsonl`);
 
@@ -199,10 +200,11 @@ async function main() {
     conditions: byCondition,
   };
 
-  writeFileSync(join(OUT, "http.json"), JSON.stringify(run, null, 2));
+  writeFileSync(join(OUT, outName), JSON.stringify(run, null, 2));
+  const mdName = outName.replace(/\.json$/, ".md");
   console.log(text(run));
-  writeFileSync(join(OUT, "http.md"), text(run));
-  console.log(`\nwritten: bench/out/http.json, bench/out/http.md, ${run.rawValues}`);
+  writeFileSync(join(OUT, mdName), text(run));
+  console.log(`\nwritten: bench/out/${outName}, bench/out/${mdName}, ${run.rawValues}`);
 }
 
 function trimSpans(r) {

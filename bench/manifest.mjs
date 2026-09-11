@@ -66,13 +66,25 @@ async function main() {
         join pg_policy pol on pol.polname = p.policyname
         join pg_class c on c.oid = pol.polrelid and c.relname = p.tablename
        where schemaname = 'trace' order by 1`;
-    const counts = await sql`
-      select count(*) as rows, count(distinct account_id) as accounts,
-             min(event_at) as oldest, max(event_at) as newest
-        from trace.watchlist_before`;
-    const perAccount = await sql`
-      select account_id, count(*) as rows from trace.watchlist_before
-       group by 1 order by 2 desc`;
+    // The manifest is read with the application role, and row level security
+    // applies to it, so a plain count(*) returns only what that caller may see.
+    // The planner's estimate in pg_class is not filtered by a policy, so it is
+    // the honest way to state the size of the table from here.
+    const planner = await sql`
+      select c.relname as table, c.reltuples::bigint as estimated_rows
+        from pg_class c join pg_namespace n on n.oid = c.relnamespace
+       where n.nspname = 'trace' and c.relkind = 'r' order by 1`;
+    const asCaller = await sql.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims', ${JSON.stringify({
+        sub: "11111111-2222-4333-8444-555555555555",
+        account_id: "12",
+        role: "authenticated",
+      })}, true)`;
+      return tx`select count(*) as visible_rows,
+                       count(distinct account_id) as visible_accounts,
+                       min(event_at) as oldest, max(event_at) as newest
+                  from trace.watchlist_after`;
+    });
     const rls = await sql`
       select c.relname as table, c.relrowsecurity as rls_enabled
         from pg_class c join pg_namespace n on n.oid = c.relnamespace
@@ -82,8 +94,10 @@ async function main() {
       server: server.version,
       readAs: server.role,
       seed: "select setseed(0.20260911) before the insert, see db/002_seed.sql",
-      dataset: counts[0],
-      rowsPerAccount: Object.fromEntries(perAccount.map((r) => [r.account_id, Number(r.rows)])),
+      datasetNote:
+        "Read with the application role, so row level security applies. The planner estimate is unfiltered; the visible counts are what the measured caller can see.",
+      plannerEstimate: Object.fromEntries(planner.map((r) => [r.table, Number(r.estimated_rows)])),
+      visibleToMeasuredCaller: { account_id: 12, ...asCaller[0] },
       rowLevelSecurity: Object.fromEntries(rls.map((r) => [r.table, r.rls_enabled])),
       tables,
       indexes,
@@ -142,7 +156,11 @@ async function main() {
   console.log(`commit      ${manifest.repository.shortCommit}${manifest.repository.dirty ? " (working tree dirty)" : ""}`);
   console.log(`deployment  ${manifest.deployment.deploymentId} in ${manifest.deployment.functionRegion}`);
   console.log(`next        ${manifest.pinnedVersions.nextInstalled}, node ${manifest.deployment.nodeRuntime}`);
-  console.log(`database    ${database.server ?? "?"} in ${manifest.deployment.databaseRegion}, ${database.dataset?.rows ?? "?"} rows`);
+  console.log(
+    `database    ${database.server ?? "?"} in ${manifest.deployment.databaseRegion}, ` +
+      `${database.plannerEstimate?.watchlist_before ?? "?"} rows estimated, ` +
+      `${database.visibleToMeasuredCaller?.visible_rows ?? "?"} visible to the measured caller`,
+  );
   console.log("\nwritten: bench/out/manifest.json");
 }
 

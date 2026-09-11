@@ -20,7 +20,11 @@ import { resolvedAt } from "./stats.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const budgetPath = join(here, "..", "perf-budget.json");
-const runPath = join(here, "out", "http.json");
+const argRun = process.argv.indexOf("--run");
+const runPath =
+  argRun > -1 && process.argv[argRun + 1]
+    ? process.argv[argRun + 1]
+    : join(here, "out", "http.json");
 
 const INCONCLUSIVE = 2;
 

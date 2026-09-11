@@ -12,6 +12,4 @@ npm-debug.log*
 next-env.d.ts
 .dbpw
 LIVRAISON.md
-bench/out/http-raw-*.jsonl
-bench/out/browser-raw-*.jsonl
 scratch/

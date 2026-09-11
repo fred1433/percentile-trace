@@ -27,8 +27,13 @@ export async function GET(req: NextRequest) {
 
   // Vercel stamps every request with an id that also appears in its runtime
   // log. The raw value goes back in a header; a sanitised copy goes into the
-  // SQL comment, so a log line, a pg_stat_statements entry and a request seen
-  // in the browser are the same request rather than three plausible neighbours.
+  // SQL comment, so a request seen in the browser, the span tree below and the
+  // statement running in the database are the same request.
+  //
+  // Where that comment is visible was checked, not assumed (bench/trace-link.mjs):
+  // pg_stat_activity carries it, so a request in flight can be matched to the
+  // query it is waiting on. pg_stat_statements does not, because it keys on the
+  // normalised parse tree and a comment is not part of it.
   const rawVercelId = req.headers.get("x-vercel-id");
   const traceId = safeTraceId(rawVercelId ?? localTraceId());
 

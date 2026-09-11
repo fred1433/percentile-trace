@@ -46,17 +46,10 @@ async function observe(browser, variant, windowIndex) {
   // Stamp the moment the streamed rows land, from inside the page, so the end
   // of the measurement is the DOM commit and not a polling interval.
   await page.addInitScript(() => {
-    // @ts-nocheck
     window.__ptRowsAt = null;
     window.__ptClickAt = null;
-    const mark = () => {
-      const el = document.querySelector("[data-rows-ready]");
-      if (el && window.__ptRowsAt === null) window.__ptRowsAt = performance.now();
-    };
-    new MutationObserver(mark).observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
+    // The click listener goes on first: it is the start of the measurement and
+    // nothing else is allowed to be able to stop it being installed.
     document.addEventListener(
       "click",
       () => {
@@ -64,6 +57,14 @@ async function observe(browser, variant, windowIndex) {
       },
       true,
     );
+    const mark = () => {
+      if (window.__ptRowsAt === null && document.querySelector("[data-rows-ready]")) {
+        window.__ptRowsAt = performance.now();
+      }
+    };
+    // This runs at document start, so documentElement does not exist yet.
+    // document itself is a Node and is there from the first tick.
+    new MutationObserver(mark).observe(document, { childList: true, subtree: true });
   });
 
   const started = new Date().toISOString();
