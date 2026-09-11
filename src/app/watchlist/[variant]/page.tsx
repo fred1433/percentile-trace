@@ -120,7 +120,7 @@ async function Rows({ variant }: { variant: Variant }) {
           {reading.rows.slice(0, 8).map((row) => (
             <tr key={row.id} className="border-t border-rule">
               <td className="py-2.5 text-ink-soft">
-                {String(row.event_at).slice(0, 19).replace("T", " ")}
+                {new Date(row.event_at).toISOString().slice(0, 16).replace("T", " ")}
               </td>
               <td className="py-2.5">{row.symbol}</td>
               <td className="py-2.5 text-ink-soft">{row.event_type}</td>
