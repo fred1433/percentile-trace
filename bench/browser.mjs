@@ -30,6 +30,13 @@ const windows = Number(args.windows ?? 3);
 const perWindow = Number(args["per-window"] ?? 12);
 const from = args.from ?? "unspecified";
 const conditions = (args.conditions ?? "before,after").split(",");
+// click:  land on /, let prefetch settle, click the watchlist link, wait for the
+//         rows. This is the headline metric.
+// direct: open /watchlist/<variant> as a full navigation, which is the only way
+//         Largest Contentful Paint describes the watchlist page rather than the
+//         page the visitor came from.
+const mode = args.mode ?? "click";
+const outName = args["out-name"] ?? (mode === "click" ? "browser.json" : `browser-${mode}.json`);
 
 const TITLES = {
   before: "Membership subquery",
@@ -65,22 +72,37 @@ async function observe(browser, variant, windowIndex) {
     // This runs at document start, so documentElement does not exist yet.
     // document itself is a Node and is there from the first tick.
     new MutationObserver(mark).observe(document, { childList: true, subtree: true });
+
+    // getEntriesByType does not return largest-contentful-paint entries, they
+    // only reach an observer. Keeping the last one is the definition of LCP.
+    window.__ptLcp = null;
+    try {
+      new PerformanceObserver((list) => {
+        const last = list.getEntries().pop();
+        if (last) window.__ptLcp = last.startTime;
+      }).observe({ type: "largest-contentful-paint", buffered: true });
+    } catch {
+      /* not every engine exposes it */
+    }
   });
 
   const started = new Date().toISOString();
   try {
-    await page.goto(target, { waitUntil: "load" });
-    // Let the default link prefetch settle, so every observation starts from
-    // the same state rather than racing it.
-    await page.waitForTimeout(1500);
-
-    await page.click(`a[data-open="${variant}"]`);
+    if (mode === "direct") {
+      await page.goto(`${target}/watchlist/${variant}`, { waitUntil: "load" });
+    } else {
+      await page.goto(target, { waitUntil: "load" });
+      // Let the default link prefetch settle, so every observation starts from
+      // the same state rather than racing it.
+      await page.waitForTimeout(1500);
+      await page.click(`a[data-open="${variant}"]`);
+    }
     await page.waitForSelector("[data-rows-ready]", { timeout: 60_000 });
+    await page.waitForTimeout(400);
 
     const m = await page.evaluate(() => {
       const el = document.querySelector("[data-rows-ready]");
       const nav = performance.getEntriesByType("navigation")[0];
-      const lcp = performance.getEntriesByType("largest-contentful-paint").pop();
       return {
         clickAt: window.__ptClickAt,
         rowsAt: window.__ptRowsAt,
@@ -89,13 +111,17 @@ async function observe(browser, variant, windowIndex) {
         traceId: el?.getAttribute("data-trace-id") ?? null,
         queryMs: Number(el?.getAttribute("data-query-ms") ?? 0),
         landingTtfb: nav ? nav.responseStart - nav.startTime : null,
-        landingLcp: lcp ? lcp.startTime : null,
+        landingLcp: window.__ptLcp,
         url: location.pathname,
       };
     });
 
     const clickToRowsMs =
-      m.clickAt !== null && m.rowsAt !== null ? m.rowsAt - m.clickAt : null;
+      mode === "direct"
+        ? m.rowsAt
+        : m.clickAt !== null && m.rowsAt !== null
+          ? m.rowsAt - m.clickAt
+          : null;
     const verified =
       m.rowsCount === 50 && !!m.firstId && m.url === `/watchlist/${variant}`;
 
@@ -171,9 +197,15 @@ async function main() {
     finishedAt: new Date().toISOString(),
     target,
     from,
-    population: "browser clicks on the watchlist link, one click per observation",
+    mode,
+    population:
+      mode === "click"
+        ? "browser clicks on the watchlist link, one click per observation"
+        : "full navigations straight to the watchlist page, one per observation",
     metric:
-      "From the click on the watchlist link to the expected rows on screen, verified as 50 rows with the first id the request returned, measured by Chromium.",
+      mode === "click"
+        ? "From the click on the watchlist link to the expected rows on screen, verified as 50 rows with the first id the request returned, measured by Chromium."
+        : "From the start of a full navigation to /watchlist to the expected rows on screen, with the navigation's own TTFB and Largest Contentful Paint, measured by Chromium.",
     loadModel:
       "Closed loop, one click at a time, a fresh browser context per observation, link prefetch at the Next.js default. Failed and unverified observations are counted.",
     engine: `chromium ${version} via playwright`,
@@ -189,17 +221,19 @@ async function main() {
     conditions: byCondition,
   };
 
-  writeFileSync(join(OUT, "browser.json"), JSON.stringify(run, null, 2));
-  // The page reads this one. It carries the headline population only, so a
-  // number on the site is always the one a visitor would have experienced.
-  writeFileSync(join(OUT, "summary.json"), JSON.stringify({ runs: [run] }, null, 2));
+  writeFileSync(join(OUT, outName), JSON.stringify(run, null, 2));
+  if (mode === "click") {
+    // The page reads this one. It carries the headline population only, so a
+    // number on the site is always one a visitor would have experienced.
+    writeFileSync(join(OUT, "summary.json"), JSON.stringify({ runs: [run] }, null, 2));
+  }
   console.log(`\n${run.metric}`);
   for (const [name, c] of Object.entries(byCondition)) {
     console.log(
       `  ${name.padEnd(32)} n ${String(c.clientMs.n).padStart(3)}  p95 ${fmt(c.clientMs.p95)}  p99 ${fmt(c.clientMs.p99)}${c.clientMs.p99IsMax ? "  (exploratory p99)" : ""}`,
     );
   }
-  console.log(`\nwritten: bench/out/browser.json, ${run.rawValues}`);
+  console.log(`\nwritten: bench/out/${outName}, ${run.rawValues}`);
 }
 
 const fmt = (v) => `${v === null ? "-" : v.toFixed(0)} ms`.padStart(9);
