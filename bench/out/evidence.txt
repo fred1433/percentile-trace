@@ -1,58 +1,58 @@
-Captured 2026-09-11T13:55:00.145Z against https://percentile-trace.theaipipe.com
+Captured 2026-09-11T14:44:18.392Z against https://percentile-trace.theaipipe.com
 
 === before: response headers as returned by https://percentile-trace.theaipipe.com ===
 GET /api/trace?variant=before
 HTTP/2 200
 cache-control: no-store, max-age=0
-server-timing: connect;dur=132.43, claims;dur=8.40, query;dur=3242.17;desc="Membership subquery", handler;dur=3392.42
+server-timing: connect;dur=0.21, claims;dur=8.11, query;dur=3346.91;desc="Membership subquery", handler;dur=3366.68
 x-matched-path: /api/trace
-x-pt-commit: 3343305
+x-pt-commit: 37d30f7
 x-pt-db-region: us-east-1
-x-pt-first-on-instance: 1
-x-pt-instance: natfuute
+x-pt-first-on-instance: 0
+x-pt-instance: 60goufqz
 x-pt-region: iad1
 x-pt-rows: 50
-x-pt-trace-id: gru1::z4rdm-1789134895052-06bb0ce93c11
+x-pt-trace-id: gru1::jxhxg-1789137852906-723f030d1cab
 x-pt-variant: before
-x-pt-vercel-id: gru1::z4rdm-1789134895052-06bb0ce93c11
+x-pt-vercel-id: gru1::jxhxg-1789137852906-723f030d1cab
 x-vercel-cache: MISS
-x-vercel-id: gru1::iad1::z4rdm-1789134895052-06bb0ce93c11
+x-vercel-id: gru1::iad1::jxhxg-1789137852906-723f030d1cab
 
 --- the statement that ran, with the trace id carried into the SQL comment ---
-/* pt variant=before trace=gru1::z4rdm-1789134895052-06bb0ce93c11 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_before where event_at >= $1 order by event_at desc, id desc limit 50
+/* pt variant=before trace=gru1::jxhxg-1789137852906-723f030d1cab */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_before where event_at >= $1 order by event_at desc, id desc limit 50
 
 --- the span tree of this one request ---
-db.connect          132.49 ms   span ae9ad0e8ecf238cd  parent fe649d872496e8fe  trace d998ab0442c3a1711da18b0d9b6d6988
-db.set_claims         8.45 ms   span 278a3de728cf22e8  parent af06b7ba7b5bf495  trace d998ab0442c3a1711da18b0d9b6d6988
-db.query           3242.23 ms   span 161d0432d36c2ddb  parent af06b7ba7b5bf495  trace d998ab0442c3a1711da18b0d9b6d6988
-db.transaction     3258.54 ms   span af06b7ba7b5bf495  parent fe649d872496e8fe  trace d998ab0442c3a1711da18b0d9b6d6988
+db.connect            0.25 ms   span cb127ea110a20f4d  parent e6d9c05a7d0f7cb1  trace 6ac0551758d44cce08aa6c75c3707326
+db.set_claims         8.19 ms   span 844d9c53e1d48015  parent c2bf08326f02dd7a  trace 6ac0551758d44cce08aa6c75c3707326
+db.query           3347.01 ms   span c925b959448db8d8  parent c2bf08326f02dd7a  trace 6ac0551758d44cce08aa6c75c3707326
+db.transaction     3364.27 ms   span c2bf08326f02dd7a  parent e6d9c05a7d0f7cb1  trace 6ac0551758d44cce08aa6c75c3707326
 
 === after: response headers as returned by https://percentile-trace.theaipipe.com ===
 GET /api/trace?variant=after
 HTTP/2 200
 cache-control: no-store, max-age=0
-server-timing: connect;dur=0.08, claims;dur=6.34, query;dur=18.81;desc="Account claim", handler;dur=34.42
+server-timing: connect;dur=0.10, claims;dur=7.91, query;dur=9.90;desc="Account claim", handler;dur=27.75
 x-matched-path: /api/trace
-x-pt-commit: 3343305
+x-pt-commit: 37d30f7
 x-pt-db-region: us-east-1
 x-pt-first-on-instance: 0
-x-pt-instance: natfuute
+x-pt-instance: 60goufqz
 x-pt-region: iad1
 x-pt-rows: 50
-x-pt-trace-id: gru1::s9cpg-1789134898814-6dd3467b703b
+x-pt-trace-id: gru1::66qnj-1789137856496-7bc1e014dde1
 x-pt-variant: after
-x-pt-vercel-id: gru1::s9cpg-1789134898814-6dd3467b703b
+x-pt-vercel-id: gru1::66qnj-1789137856496-7bc1e014dde1
 x-vercel-cache: MISS
-x-vercel-id: gru1::iad1::s9cpg-1789134898814-6dd3467b703b
+x-vercel-id: gru1::iad1::66qnj-1789137856496-7bc1e014dde1
 
 --- the statement that ran, with the trace id carried into the SQL comment ---
-/* pt variant=after trace=gru1::s9cpg-1789134898814-6dd3467b703b */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after where event_at >= $1 order by event_at desc, id desc limit 50
+/* pt variant=after trace=gru1::66qnj-1789137856496-7bc1e014dde1 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after where event_at >= $1 order by event_at desc, id desc limit 50
 
 --- the span tree of this one request ---
-db.connect            0.12 ms   span 83a9237d35519f0b  parent 0e63b6a4336f2421  trace 1f69e2c391ebeea971de13fe2dfa0f9b
-db.set_claims         6.40 ms   span 2d72c19be342f160  parent 9ef0ba507e5a51ab  trace 1f69e2c391ebeea971de13fe2dfa0f9b
-db.query             18.86 ms   span 3493adf5c5b0ec24  parent 9ef0ba507e5a51ab  trace 1f69e2c391ebeea971de13fe2dfa0f9b
-db.transaction       32.95 ms   span 9ef0ba507e5a51ab  parent 0e63b6a4336f2421  trace 1f69e2c391ebeea971de13fe2dfa0f9b
+db.connect            0.12 ms   span 7b704602f32334cb  parent 97fa058aedb21ab6  trace 0edc735bf6e4bda573a1c71721477948
+db.set_claims         7.95 ms   span a494fe843d56b1b2  parent a612a05c40a2562b  trace 0edc735bf6e4bda573a1c71721477948
+db.query              9.95 ms   span 3f3cf34db3427762  parent a612a05c40a2562b  trace 0edc735bf6e4bda573a1c71721477948
+db.transaction       26.87 ms   span a612a05c40a2562b  parent 97fa058aedb21ab6  trace 0edc735bf6e4bda573a1c71721477948
 
 === the same Server-Timing, read by a browser ===
 PerformanceResourceTiming.serverTiming, from a real Chromium on the deployed page.
@@ -61,35 +61,8 @@ This is the data the network panel renders in its timing section.
 [
   {
     "url": "/api/trace?variant=before&spans=1",
-    "requestToResponseStartMs": 315.60000002384186,
-    "durationMs": 316.39999997615814,
-    "serverTiming": [
-      {
-        "name": "connect",
-        "duration": 0.07,
-        "description": ""
-      },
-      {
-        "name": "claims",
-        "duration": 6.88,
-        "description": ""
-      },
-      {
-        "name": "query",
-        "duration": 91.9,
-        "description": "Membership subquery"
-      },
-      {
-        "name": "handler",
-        "duration": 119.52,
-        "description": ""
-      }
-    ]
-  },
-  {
-    "url": "/api/trace?variant=after&spans=1",
-    "requestToResponseStartMs": 231,
-    "durationMs": 231.5,
+    "requestToResponseStartMs": 344.09999990463257,
+    "durationMs": 344.89999997615814,
     "serverTiming": [
       {
         "name": "connect",
@@ -98,17 +71,44 @@ This is the data the network panel renders in its timing section.
       },
       {
         "name": "claims",
-        "duration": 8.55,
+        "duration": 7.8,
         "description": ""
       },
       {
         "name": "query",
-        "duration": 15.51,
+        "duration": 87.73,
+        "description": "Membership subquery"
+      },
+      {
+        "name": "handler",
+        "duration": 109.32,
+        "description": ""
+      }
+    ]
+  },
+  {
+    "url": "/api/trace?variant=after&spans=1",
+    "requestToResponseStartMs": 224.39999997615814,
+    "durationMs": 225,
+    "serverTiming": [
+      {
+        "name": "connect",
+        "duration": 0.08,
+        "description": ""
+      },
+      {
+        "name": "claims",
+        "duration": 7.68,
+        "description": ""
+      },
+      {
+        "name": "query",
+        "duration": 8.83,
         "description": "Account claim"
       },
       {
         "name": "handler",
-        "duration": 36.07,
+        "duration": 27.38,
         "description": ""
       }
     ]

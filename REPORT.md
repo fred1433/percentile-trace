@@ -267,7 +267,33 @@ What it detects: regressions covered by this scenario and this budget. It says
 nothing about behaviour under concurrency, about other accounts, about other query
 shapes, or about any region other than the one the deployment runs in.
 
-*The red run and the green run are linked in the runs list of the repository.*
+**It was made to fail, on purpose, on a real regression.** The policy rewrite lives
+in the database and the page points at a table, so the mistake this scenario is
+most likely to suffer is pointing the fixed page at the table that still carries
+the slow policy. That commit was pushed, deployed to production, benched by the
+workflow and reverted.
+
+| Run | Commit | `after` query p95 over 120 samples | Result |
+|---|---|---|---|
+| [34610353346](https://github.com/fred1433/percentile-trace/actions/runs/34610353346) | `a87319c` | 10.92 ms | green |
+| [34610803745](https://github.com/fred1433/percentile-trace/actions/runs/34610803745) | `f24f8d1`, regression | **92.73 ms** | **red** |
+| [34611333391](https://github.com/fred1433/percentile-trace/actions/runs/34611333391) | `37d30f7`, reverted | 10.36 ms | green |
+
+All three are production deployments benched from `ubuntu-latest`, 360 requests
+each, 0 failures. The red run also names the budget it broke and why:
+
+```
+OVER        after queryMs p95 92.73 ms over 120 samples, budget 17 ms
+            One index scan plus the round trip from the function to the database.
+            A policy that stops being index friendly, an index that gets dropped,
+            a function moved away from the database: all three land here first.
+OVER        after handlerMs p95 113.65 ms over 120 samples, budget 53 ms
+2 budget(s) over. Failing.
+```
+
+The 17 tests ran green in all three, including the regression: isolation and
+identical results are properties of the data, and the regression was a
+performance one.
 
 ---
 

@@ -1,8 +1,8 @@
 {
-  "at": "2026-09-11T13:55:41.510Z",
+  "at": "2026-09-11T14:44:12.258Z",
   "repository": {
-    "commit": "d9fb0d1c78ca3cc783edc47e5f48800cef66ab71",
-    "shortCommit": "d9fb0d1",
+    "commit": "37d30f7a48f24183b0b6e1874b7184f960634aa0",
+    "shortCommit": "37d30f7",
     "branch": "master",
     "dirty": true
   },
@@ -18,12 +18,12 @@
   },
   "deployment": {
     "target": "https://percentile-trace.theaipipe.com",
-    "commit": "334330588e312c8edc78eb9afac424799c46cb00",
-    "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+    "commit": "37d30f7a48f24183b0b6e1874b7184f960634aa0",
+    "deploymentId": "dpl_HAzMqYU9RMFRmFkVk5Q7gTCUcJPL",
     "functionRegion": "iad1",
     "nodeRuntime": "v24.19.0",
     "databaseRegion": "us-east-1",
-    "emptyRoundTripMs": 80.09,
+    "emptyRoundTripMs": 122.75,
     "vercelProjectAsRead": {
       "readAt": "2026-09-11",
       "nodeVersion": "24.x",

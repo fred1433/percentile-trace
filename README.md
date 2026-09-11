@@ -73,7 +73,13 @@ verified membership.
 - [`.github/workflows/perf-budget.yml`](.github/workflows/perf-budget.yml): waits
   for the deployment carrying the commit, benches it, and fails against
   [`perf-budget.json`](perf-budget.json), whose margins come from the observed
-  spread rather than from a round number.
+  spread rather than from a round number. It was made to fail on a real
+  regression and then pass again: runs
+  [34610353346](https://github.com/fred1433/percentile-trace/actions/runs/34610353346)
+  green, [34610803745](https://github.com/fred1433/percentile-trace/actions/runs/34610803745)
+  red at 92.73 ms against a 17 ms budget, and
+  [34611333391](https://github.com/fred1433/percentile-trace/actions/runs/34611333391)
+  green again.
 
 ## Where the line is
 
