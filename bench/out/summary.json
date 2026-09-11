@@ -1,0 +1,112 @@
+{
+  "runs": [
+    {
+      "at": "2026-09-11T14:04:52.982Z",
+      "finishedAt": "2026-09-11T14:15:57.135Z",
+      "target": "https://percentile-trace.theaipipe.com",
+      "from": "Asuncion, Paraguay",
+      "mode": "click",
+      "population": "browser clicks on the watchlist link, one click per observation",
+      "metric": "From the click on the watchlist link to the expected rows on screen, verified as 50 rows with the first id the request returned, measured by Chromium.",
+      "loadModel": "Closed loop, one click at a time, a fresh browser context per observation, link prefetch at the Next.js default. Failed and unverified observations are counted.",
+      "engine": "chromium 153.0.8010.12 via playwright",
+      "windows": 3,
+      "perWindow": 35,
+      "functionRegion": "iad1",
+      "databaseRegion": "us-east-1",
+      "commit": "f73ea58967f5ff5a07426b4d3196dbbf1c881ca1",
+      "deploymentId": "dpl_BVxxhE4FJV7C5XP5Td1zGyVNC7yH",
+      "attempted": 210,
+      "failed": 0,
+      "rawValues": "./bench/out/browser-raw-2026-09-11T14-04-52-543Z.jsonl",
+      "conditions": {
+        "Membership subquery": {
+          "variant": "before",
+          "attempted": 105,
+          "failed": 0,
+          "clientMs": {
+            "n": 105,
+            "min": 306.4,
+            "p95": 477.6,
+            "p99": 526.6,
+            "max": 574.3,
+            "p99IsMax": false
+          },
+          "queryMs": {
+            "n": 105,
+            "min": 82.57,
+            "p95": 134.81,
+            "p99": 179.29,
+            "max": 248.53,
+            "p99IsMax": false
+          },
+          "landingTtfb": {
+            "n": 105,
+            "min": 171.7,
+            "p95": 211.6,
+            "p99": 444.5,
+            "max": 511.5,
+            "p99IsMax": false
+          },
+          "landingLcp": {
+            "n": 105,
+            "min": 292,
+            "p95": 472,
+            "p99": 664,
+            "max": 752,
+            "p99IsMax": false
+          },
+          "verifiedRows": [
+            50
+          ],
+          "firstIds": [
+            "6"
+          ]
+        },
+        "Account claim": {
+          "variant": "after",
+          "attempted": 105,
+          "failed": 0,
+          "clientMs": {
+            "n": 105,
+            "min": 233.1,
+            "p95": 359.2,
+            "p99": 400.9,
+            "max": 560.9,
+            "p99IsMax": false
+          },
+          "queryMs": {
+            "n": 105,
+            "min": 5.56,
+            "p95": 7.14,
+            "p99": 11.63,
+            "max": 18.21,
+            "p99IsMax": false
+          },
+          "landingTtfb": {
+            "n": 105,
+            "min": 168,
+            "p95": 207.4,
+            "p99": 267,
+            "max": 494.1,
+            "p99IsMax": false
+          },
+          "landingLcp": {
+            "n": 105,
+            "min": 284,
+            "p95": 408,
+            "p99": 580,
+            "max": 732,
+            "p99IsMax": false
+          },
+          "verifiedRows": [
+            50
+          ],
+          "firstIds": [
+            "6"
+          ]
+        }
+      }
+    }
+  ]
+}

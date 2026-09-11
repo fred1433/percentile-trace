@@ -1,0 +1,53 @@
+=== before (trace.watchlist_before) === 2026-09-11T13:49:14.718Z
+
+Limit (actual time=77.962..77.969 rows=50 loops=1)
+  Buffers: shared hit=9201
+  ->  Sort (actual time=77.960..77.964 rows=50 loops=1)
+        Sort Key: watchlist_before.event_at DESC, watchlist_before.id DESC
+        Sort Method: top-N heapsort  Memory: 28kB
+        Buffers: shared hit=9201
+        ->  Seq Scan on watchlist_before (actual time=0.035..75.428 rows=13356 loops=1)
+              Filter: ((ANY (account_id = (hashed SubPlan 1).col1)) AND (event_at >= '2026-08-12 00:00:00+00'::timestamp with time zone))
+              Rows Removed by Filter: 586644
+              Buffers: shared hit=9201
+              SubPlan 1
+                ->  Index Only Scan using account_members_pkey on account_members m (actual time=0.009..0.010 rows=1 loops=1)
+                      Index Cond: (user_id = (((NULLIF(current_setting('request.jwt.claims'::text, true), ''::text))::jsonb ->> 'sub'::text))::uuid)
+                      Heap Fetches: 0
+                      Buffers: shared hit=3
+Planning Time: 0.245 ms
+Execution Time: 78.013 ms
+
+=== after (trace.watchlist_after) === 2026-09-11T13:49:14.718Z
+
+Limit (actual time=0.079..0.100 rows=50 loops=1)
+  Buffers: shared hit=27
+  InitPlan 1
+    ->  Result (actual time=0.010..0.011 rows=1 loops=1)
+  ->  Incremental Sort (actual time=0.078..0.095 rows=50 loops=1)
+        Sort Key: watchlist_after.event_at DESC, watchlist_after.id DESC
+        Presorted Key: watchlist_after.event_at
+        Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 27kB  Peak Memory: 27kB
+        Buffers: shared hit=27
+        ->  Index Scan using watchlist_after_account_time on watchlist_after (actual time=0.038..0.072 rows=51 loops=1)
+              Index Cond: ((account_id = (InitPlan 1).col1) AND (event_at >= '2026-08-12 00:00:00+00'::timestamp with time zone))
+              Buffers: shared hit=27
+Planning Time: 0.187 ms
+Execution Time: 0.129 ms
+
+=== after-noindex (trace.watchlist_after_noindex) === 2026-09-11T13:49:14.718Z
+
+Limit (actual time=51.241..51.249 rows=50 loops=1)
+  Buffers: shared hit=9198
+  InitPlan 1
+    ->  Result (actual time=0.011..0.012 rows=1 loops=1)
+  ->  Sort (actual time=51.239..51.242 rows=50 loops=1)
+        Sort Key: watchlist_after_noindex.event_at DESC, watchlist_after_noindex.id DESC
+        Sort Method: top-N heapsort  Memory: 28kB
+        Buffers: shared hit=9198
+        ->  Seq Scan on watchlist_after_noindex (actual time=0.025..48.669 rows=13356 loops=1)
+              Filter: ((event_at >= '2026-08-12 00:00:00+00'::timestamp with time zone) AND (account_id = (InitPlan 1).col1))
+              Rows Removed by Filter: 586644
+              Buffers: shared hit=9198
+Planning Time: 0.181 ms
+Execution Time: 51.284 ms

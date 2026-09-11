@@ -1,0 +1,25 @@
+{
+  "at": "2026-09-11T13:54:38.904Z",
+  "traceId": "demo::mtx0jx2e",
+  "pgStatActivity": {
+    "caught": true,
+    "note": "The statement text of a running session carries the comment, so a request in flight can be matched to the query it is waiting on.",
+    "rows": [
+      {
+        "pid": 20119,
+        "state": "idle in transaction",
+        "query": "/* pt variant=before trace=demo::mtx0jx2e */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_before where event_at >= $1 order by event_at desc, id desc limit 50"
+      }
+    ]
+  },
+  "pgStatStatements": {
+    "entriesForThisTable": 3,
+    "entriesCarryingThisTraceId": 0,
+    "callsInThoseEntries": [
+      1472,
+      1,
+      1
+    ],
+    "note": "pg_stat_statements keys on the normalised parse tree and a comment is not part of it. Many requests with distinct trace ids collapse into one entry, whose stored text keeps whichever id arrived first. It identifies the statement, not the request."
+  }
+}

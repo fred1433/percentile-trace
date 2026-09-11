@@ -1,0 +1,519 @@
+{
+  "population": "HTTP requests to /api/trace, one variant per request",
+  "metric": "clientMs is the wall time of the fetch as the bench machine saw it; handlerMs, connectMs, claimsMs and queryMs are what the function measured about itself. Neither is derived from the other and no segment is obtained by subtraction.",
+  "loadModel": "Closed loop, one request in flight, no pacing, sequential per condition, condition order alternating between windows. Failed and unsent requests are counted. A request is abandoned after 20000 ms and counted as a failure.",
+  "startedAt": "2026-09-11T13:20:11.768Z",
+  "finishedAt": "2026-09-11T13:33:57.520Z",
+  "target": "https://percentile-trace.theaipipe.com",
+  "from": "Asuncion, Paraguay",
+  "label": "main",
+  "windows": 4,
+  "perWindow": 250,
+  "functionRegion": "iad1",
+  "databaseRegion": "us-east-1",
+  "commit": "334330588e312c8edc78eb9afac424799c46cb00",
+  "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+  "nodeVersion": "v24.19.0",
+  "instancesSeen": 9,
+  "attempted": 3000,
+  "failed": 1,
+  "rawValues": "./bench/out/http-raw-2026-09-11T13-20-11-767Z.jsonl",
+  "conditions": {
+    "before": {
+      "attempted": 1000,
+      "failed": 1,
+      "afterWarmUp": {
+        "clientMs": {
+          "n": 995,
+          "min": 276.58,
+          "p95": 336.55,
+          "p99": 497.75,
+          "max": 4021.04,
+          "p99IsMax": false
+        },
+        "handlerMs": {
+          "n": 995,
+          "min": 96.09,
+          "p95": 113.52,
+          "p99": 144.21,
+          "max": 3830.52,
+          "p99IsMax": false
+        },
+        "queryMs": {
+          "n": 995,
+          "min": 82.95,
+          "p95": 92.53,
+          "p99": 123.81,
+          "max": 3815.93,
+          "p99IsMax": false
+        },
+        "connectMs": {
+          "n": 995,
+          "min": 0.03,
+          "p95": 0.11,
+          "p99": 0.72,
+          "max": 78.78,
+          "p99IsMax": false
+        },
+        "claimsMs": {
+          "n": 995,
+          "min": 5.06,
+          "p95": 8.64,
+          "p99": 15.1,
+          "max": 37.29,
+          "p99IsMax": false
+        }
+      },
+      "firstRequestOnAnInstance": {
+        "n": 4,
+        "observations": [
+          {
+            "clientMs": 609,
+            "handlerMs": 190.22,
+            "connectMs": 79.08,
+            "queryMs": 85.19,
+            "instance": "9z2lyux7"
+          },
+          {
+            "clientMs": 705,
+            "handlerMs": 215.23,
+            "connectMs": 89.96,
+            "queryMs": 91.07,
+            "instance": "8l5aply0"
+          },
+          {
+            "clientMs": 673,
+            "handlerMs": 215.09,
+            "connectMs": 93.73,
+            "queryMs": 88.56,
+            "instance": "nkixyhk4"
+          },
+          {
+            "clientMs": 995,
+            "handlerMs": 298.51,
+            "connectMs": 133.06,
+            "queryMs": 141.23,
+            "instance": "6ubc5c6f"
+          }
+        ]
+      },
+      "sameResult": {
+        "rows": [
+          50
+        ],
+        "firstId": [
+          "6"
+        ],
+        "lastId": [
+          "1999"
+        ],
+        "accountIds": [
+          12
+        ]
+      },
+      "representative": {
+        "ok": true,
+        "variant": "before",
+        "windowIndex": 2,
+        "startedAt": "2026-09-11T13:27:09.100Z",
+        "clientMs": 336.55012500000885,
+        "handlerMs": 121.43,
+        "connectMs": 0.07,
+        "claimsMs": 6.45,
+        "queryMs": 99.52,
+        "traceId": "gru1::qn8qf-1789133229303-9606bd624d41",
+        "vercelId": "gru1::qn8qf-1789133229303-9606bd624d41",
+        "vercelIdHeader": "gru1::iad1::qn8qf-1789133229303-9606bd624d41",
+        "vercelCache": "MISS",
+        "region": "iad1",
+        "dbRegion": "us-east-1",
+        "instance": "nkixyhk4",
+        "firstOnInstance": false,
+        "commit": "334330588e312c8edc78eb9afac424799c46cb00",
+        "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+        "nodeVersion": "v24.18.1",
+        "rows": 50,
+        "firstId": "6",
+        "lastId": "1999",
+        "accountIds": [
+          12
+        ],
+        "statement": "/* pt variant=before trace=gru1::qn8qf-1789133229303-9606bd624d41 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_before where event_at >= $1 order by event_at desc, id desc limit 50",
+        "spans": null
+      },
+      "distribution": [
+        {
+          "fromMs": 277,
+          "toMs": 651,
+          "count": 989
+        },
+        {
+          "fromMs": 651,
+          "toMs": 1025,
+          "count": 4
+        },
+        {
+          "fromMs": 1025,
+          "toMs": 1400,
+          "count": 0
+        },
+        {
+          "fromMs": 1400,
+          "toMs": 1774,
+          "count": 0
+        },
+        {
+          "fromMs": 1774,
+          "toMs": 2149,
+          "count": 0
+        },
+        {
+          "fromMs": 2149,
+          "toMs": 2523,
+          "count": 0
+        },
+        {
+          "fromMs": 2523,
+          "toMs": 2898,
+          "count": 0
+        },
+        {
+          "fromMs": 2898,
+          "toMs": 3272,
+          "count": 0
+        },
+        {
+          "fromMs": 3272,
+          "toMs": 3647,
+          "count": 1
+        },
+        {
+          "fromMs": 3647,
+          "toMs": 4021,
+          "count": 1
+        }
+      ]
+    },
+    "after": {
+      "attempted": 1000,
+      "failed": 0,
+      "afterWarmUp": {
+        "clientMs": {
+          "n": 1000,
+          "min": 200.11,
+          "p95": 256.43,
+          "p99": 360.56,
+          "max": 432.65,
+          "p99IsMax": false
+        },
+        "handlerMs": {
+          "n": 1000,
+          "min": 20.19,
+          "p95": 28.86,
+          "p99": 35.33,
+          "max": 66.62,
+          "p99IsMax": false
+        },
+        "queryMs": {
+          "n": 1000,
+          "min": 6.39,
+          "p95": 9.46,
+          "p99": 11.03,
+          "max": 17.07,
+          "p99IsMax": false
+        },
+        "connectMs": {
+          "n": 1000,
+          "min": 0.03,
+          "p95": 0.08,
+          "p99": 0.22,
+          "max": 0.84,
+          "p99IsMax": false
+        },
+        "claimsMs": {
+          "n": 1000,
+          "min": 5.72,
+          "p95": 8.53,
+          "p99": 11.26,
+          "max": 38.37,
+          "p99IsMax": false
+        }
+      },
+      "firstRequestOnAnInstance": {
+        "n": 0,
+        "observations": []
+      },
+      "sameResult": {
+        "rows": [
+          50
+        ],
+        "firstId": [
+          "6"
+        ],
+        "lastId": [
+          "1999"
+        ],
+        "accountIds": [
+          12
+        ]
+      },
+      "representative": {
+        "ok": true,
+        "variant": "after",
+        "windowIndex": 3,
+        "startedAt": "2026-09-11T13:32:01.950Z",
+        "clientMs": 256.43137499992736,
+        "handlerMs": 59.47,
+        "connectMs": 0.05,
+        "claimsMs": 7.33,
+        "queryMs": 9.28,
+        "traceId": "gru1::c7r5q-1789133522112-f8d3ca744e62",
+        "vercelId": "gru1::c7r5q-1789133522112-f8d3ca744e62",
+        "vercelIdHeader": "gru1::iad1::c7r5q-1789133522112-f8d3ca744e62",
+        "vercelCache": "MISS",
+        "region": "iad1",
+        "dbRegion": "us-east-1",
+        "instance": "lmzxt4uf",
+        "firstOnInstance": false,
+        "commit": "334330588e312c8edc78eb9afac424799c46cb00",
+        "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+        "nodeVersion": "v24.18.1",
+        "rows": 50,
+        "firstId": "6",
+        "lastId": "1999",
+        "accountIds": [
+          12
+        ],
+        "statement": "/* pt variant=after trace=gru1::c7r5q-1789133522112-f8d3ca744e62 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after where event_at >= $1 order by event_at desc, id desc limit 50",
+        "spans": null
+      },
+      "distribution": [
+        {
+          "fromMs": 200,
+          "toMs": 223,
+          "count": 872
+        },
+        {
+          "fromMs": 223,
+          "toMs": 247,
+          "count": 65
+        },
+        {
+          "fromMs": 247,
+          "toMs": 270,
+          "count": 21
+        },
+        {
+          "fromMs": 270,
+          "toMs": 293,
+          "count": 14
+        },
+        {
+          "fromMs": 293,
+          "toMs": 316,
+          "count": 12
+        },
+        {
+          "fromMs": 316,
+          "toMs": 340,
+          "count": 2
+        },
+        {
+          "fromMs": 340,
+          "toMs": 363,
+          "count": 6
+        },
+        {
+          "fromMs": 363,
+          "toMs": 386,
+          "count": 5
+        },
+        {
+          "fromMs": 386,
+          "toMs": 409,
+          "count": 1
+        },
+        {
+          "fromMs": 409,
+          "toMs": 433,
+          "count": 2
+        }
+      ]
+    },
+    "after-noindex": {
+      "attempted": 1000,
+      "failed": 0,
+      "afterWarmUp": {
+        "clientMs": {
+          "n": 996,
+          "min": 252.79,
+          "p95": 311.85,
+          "p99": 422.88,
+          "max": 4308.86,
+          "p99IsMax": false
+        },
+        "handlerMs": {
+          "n": 996,
+          "min": 68.11,
+          "p95": 87.14,
+          "p99": 128.46,
+          "max": 4121.67,
+          "p99IsMax": false
+        },
+        "queryMs": {
+          "n": 996,
+          "min": 56.37,
+          "p95": 63.91,
+          "p99": 95.62,
+          "max": 4102.93,
+          "p99IsMax": false
+        },
+        "connectMs": {
+          "n": 996,
+          "min": 0.03,
+          "p95": 0.11,
+          "p99": 0.97,
+          "max": 79.21,
+          "p99IsMax": false
+        },
+        "claimsMs": {
+          "n": 996,
+          "min": 4.85,
+          "p95": 8.99,
+          "p99": 12.7,
+          "max": 36.78,
+          "p99IsMax": false
+        }
+      },
+      "firstRequestOnAnInstance": {
+        "n": 4,
+        "observations": [
+          {
+            "clientMs": 749,
+            "handlerMs": 173.11,
+            "connectMs": 102.63,
+            "queryMs": 57,
+            "instance": "hb3asjkc"
+          },
+          {
+            "clientMs": 613,
+            "handlerMs": 182.8,
+            "connectMs": 90.1,
+            "queryMs": 62.27,
+            "instance": "jczem87t"
+          },
+          {
+            "clientMs": 708,
+            "handlerMs": 199.43,
+            "connectMs": 102.01,
+            "queryMs": 60.46,
+            "instance": "kd7uqbvi"
+          },
+          {
+            "clientMs": 641,
+            "handlerMs": 182.13,
+            "connectMs": 90.05,
+            "queryMs": 60.66,
+            "instance": "lmzxt4uf"
+          }
+        ]
+      },
+      "sameResult": {
+        "rows": [
+          50
+        ],
+        "firstId": [
+          "6"
+        ],
+        "lastId": [
+          "1999"
+        ],
+        "accountIds": [
+          12
+        ]
+      },
+      "representative": {
+        "ok": true,
+        "variant": "after-noindex",
+        "windowIndex": 3,
+        "startedAt": "2026-09-11T13:30:38.216Z",
+        "clientMs": 311.8542080000043,
+        "handlerMs": 82.83,
+        "connectMs": 0.05,
+        "claimsMs": 8.14,
+        "queryMs": 61.52,
+        "traceId": "gru1::vwmdr-1789133438465-cecebc165f0b",
+        "vercelId": "gru1::vwmdr-1789133438465-cecebc165f0b",
+        "vercelIdHeader": "gru1::iad1::vwmdr-1789133438465-cecebc165f0b",
+        "vercelCache": "MISS",
+        "region": "iad1",
+        "dbRegion": "us-east-1",
+        "instance": "kd7uqbvi",
+        "firstOnInstance": false,
+        "commit": "334330588e312c8edc78eb9afac424799c46cb00",
+        "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+        "nodeVersion": "v24.18.1",
+        "rows": 50,
+        "firstId": "6",
+        "lastId": "1999",
+        "accountIds": [
+          12
+        ],
+        "statement": "/* pt variant=after-noindex trace=gru1::vwmdr-1789133438465-cecebc165f0b */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after_noindex where event_at >= $1 order by event_at desc, id desc limit 50",
+        "spans": null
+      },
+      "distribution": [
+        {
+          "fromMs": 253,
+          "toMs": 658,
+          "count": 993
+        },
+        {
+          "fromMs": 658,
+          "toMs": 1064,
+          "count": 2
+        },
+        {
+          "fromMs": 1064,
+          "toMs": 1470,
+          "count": 0
+        },
+        {
+          "fromMs": 1470,
+          "toMs": 1875,
+          "count": 0
+        },
+        {
+          "fromMs": 1875,
+          "toMs": 2281,
+          "count": 0
+        },
+        {
+          "fromMs": 2281,
+          "toMs": 2686,
+          "count": 0
+        },
+        {
+          "fromMs": 2686,
+          "toMs": 3092,
+          "count": 0
+        },
+        {
+          "fromMs": 3092,
+          "toMs": 3498,
+          "count": 0
+        },
+        {
+          "fromMs": 3498,
+          "toMs": 3903,
+          "count": 0
+        },
+        {
+          "fromMs": 3903,
+          "toMs": 4309,
+          "count": 1
+        }
+      ]
+    }
+  }
+}

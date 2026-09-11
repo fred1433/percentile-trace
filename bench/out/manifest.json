@@ -1,0 +1,142 @@
+{
+  "at": "2026-09-11T13:55:41.510Z",
+  "repository": {
+    "commit": "d9fb0d1c78ca3cc783edc47e5f48800cef66ab71",
+    "shortCommit": "d9fb0d1",
+    "branch": "master",
+    "dirty": true
+  },
+  "pinnedVersions": {
+    "next": "16.3.4",
+    "nextInstalled": "16.3.4",
+    "react": "19.2.8",
+    "postgresDriver": "3.4.9",
+    "playwright": "1.63.0",
+    "openTelemetryApi": "1.9.1",
+    "vercelOtel": "1.14.2",
+    "nodeLocal": "v22.14.0"
+  },
+  "deployment": {
+    "target": "https://percentile-trace.theaipipe.com",
+    "commit": "334330588e312c8edc78eb9afac424799c46cb00",
+    "deploymentId": "dpl_Fip4rc3LsJLEv3oMgRd9E9SYKgin",
+    "functionRegion": "iad1",
+    "nodeRuntime": "v24.19.0",
+    "databaseRegion": "us-east-1",
+    "emptyRoundTripMs": 80.09,
+    "vercelProjectAsRead": {
+      "readAt": "2026-09-11",
+      "nodeVersion": "24.x",
+      "serverlessFunctionRegion": "iad1",
+      "resourceConfig": {
+        "fluid": true,
+        "functionDefaultRegions": [
+          "iad1"
+        ],
+        "elasticConcurrencyEnabled": true,
+        "functionDefaultMemoryType": "standard",
+        "functionDefaultTimeout": 300
+      }
+    }
+  },
+  "path": "the application opens a Postgres connection through the Supavisor transaction pooler. The Supabase Data API is not used.",
+  "database": {
+    "server": "17.6",
+    "readAs": "trace_app",
+    "seed": "select setseed(0.20260911) before the insert, see db/002_seed.sql",
+    "datasetNote": "Read with the application role, so row level security applies. The planner estimate is unfiltered; the visible counts are what the measured caller can see.",
+    "plannerEstimate": {
+      "account_members": 1601,
+      "watchlist_after": 600000,
+      "watchlist_after_noindex": 600000,
+      "watchlist_before": 598582
+    },
+    "visibleToMeasuredCaller": {
+      "account_id": 12,
+      "visible_rows": "13356",
+      "visible_accounts": "1",
+      "oldest": "2026-09-04T01:20:27.000Z",
+      "newest": "2026-09-10T23:59:54.000Z"
+    },
+    "rowLevelSecurity": {
+      "account_members": false,
+      "watchlist_after": true,
+      "watchlist_after_noindex": true,
+      "watchlist_before": true
+    },
+    "tables": [
+      {
+        "table": "account_members",
+        "planner_rows": "1601",
+        "heap_size": "88 kB"
+      },
+      {
+        "table": "watchlist_after",
+        "planner_rows": "600000",
+        "heap_size": "72 MB"
+      },
+      {
+        "table": "watchlist_after_noindex",
+        "planner_rows": "600000",
+        "heap_size": "72 MB"
+      },
+      {
+        "table": "watchlist_before",
+        "planner_rows": "598582",
+        "heap_size": "72 MB"
+      }
+    ],
+    "indexes": [
+      {
+        "table": "account_members",
+        "index": "account_members_pkey",
+        "definition": "CREATE UNIQUE INDEX account_members_pkey ON trace.account_members USING btree (user_id, account_id)"
+      },
+      {
+        "table": "watchlist_after",
+        "index": "watchlist_after_account_time",
+        "definition": "CREATE INDEX watchlist_after_account_time ON trace.watchlist_after USING btree (account_id, event_at DESC)"
+      },
+      {
+        "table": "watchlist_after",
+        "index": "watchlist_after_pkey",
+        "definition": "CREATE UNIQUE INDEX watchlist_after_pkey ON trace.watchlist_after USING btree (id)"
+      },
+      {
+        "table": "watchlist_after_noindex",
+        "index": "watchlist_after_noindex_pkey",
+        "definition": "CREATE UNIQUE INDEX watchlist_after_noindex_pkey ON trace.watchlist_after_noindex USING btree (id)"
+      },
+      {
+        "table": "watchlist_before",
+        "index": "watchlist_before_account_time",
+        "definition": "CREATE INDEX watchlist_before_account_time ON trace.watchlist_before USING btree (account_id, event_at DESC)"
+      },
+      {
+        "table": "watchlist_before",
+        "index": "watchlist_before_pkey",
+        "definition": "CREATE UNIQUE INDEX watchlist_before_pkey ON trace.watchlist_before USING btree (id)"
+      }
+    ],
+    "policies": [
+      {
+        "table": "watchlist_after",
+        "policy": "account_read",
+        "roles": "{trace_app}",
+        "using_expression": "(account_id = ( SELECT trace.current_account_id() AS current_account_id))"
+      },
+      {
+        "table": "watchlist_after_noindex",
+        "policy": "account_read",
+        "roles": "{trace_app}",
+        "using_expression": "(account_id = ( SELECT trace.current_account_id() AS current_account_id))"
+      },
+      {
+        "table": "watchlist_before",
+        "policy": "account_read",
+        "roles": "{trace_app}",
+        "using_expression": "(account_id IN ( SELECT m.account_id\n   FROM trace.account_members m\n  WHERE (m.user_id = trace.current_user_id())))"
+      }
+    ]
+  }
+}

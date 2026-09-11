@@ -1,0 +1,108 @@
+{
+  "at": "2026-09-11T14:18:39.996Z",
+  "finishedAt": "2026-09-11T14:19:51.070Z",
+  "target": "https://percentile-trace.theaipipe.com",
+  "from": "Asuncion, Paraguay",
+  "mode": "direct",
+  "population": "full navigations straight to the watchlist page, one per observation",
+  "metric": "From the start of a full navigation to /watchlist to the expected rows on screen, with the navigation's own TTFB and Largest Contentful Paint, measured by Chromium.",
+  "loadModel": "Closed loop, one click at a time, a fresh browser context per observation, link prefetch at the Next.js default. Failed and unverified observations are counted.",
+  "engine": "chromium 153.0.8010.12 via playwright",
+  "windows": 2,
+  "perWindow": 15,
+  "functionRegion": "iad1",
+  "databaseRegion": "us-east-1",
+  "commit": "f73ea58967f5ff5a07426b4d3196dbbf1c881ca1",
+  "deploymentId": "dpl_BVxxhE4FJV7C5XP5Td1zGyVNC7yH",
+  "attempted": 60,
+  "failed": 0,
+  "rawValues": "./bench/out/browser-raw-2026-09-11T14-18-39-254Z.jsonl",
+  "conditions": {
+    "Membership subquery": {
+      "variant": "before",
+      "attempted": 30,
+      "failed": 0,
+      "clientMs": {
+        "n": 30,
+        "min": 417.3,
+        "p95": 616.9,
+        "p99": 4708.6,
+        "max": 4708.6,
+        "p99IsMax": true
+      },
+      "queryMs": {
+        "n": 30,
+        "min": 83.21,
+        "p95": 88.7,
+        "p99": 4194.42,
+        "max": 4194.42,
+        "p99IsMax": true
+      },
+      "landingTtfb": {
+        "n": 30,
+        "min": 173.7,
+        "p95": 205.5,
+        "p99": 232.7,
+        "max": 232.7,
+        "p99IsMax": true
+      },
+      "landingLcp": {
+        "n": 30,
+        "min": 300,
+        "p95": 444,
+        "p99": 632,
+        "max": 632,
+        "p99IsMax": true
+      },
+      "verifiedRows": [
+        50
+      ],
+      "firstIds": [
+        "6"
+      ]
+    },
+    "Account claim": {
+      "variant": "after",
+      "attempted": 30,
+      "failed": 0,
+      "clientMs": {
+        "n": 30,
+        "min": 343.7,
+        "p95": 487.5,
+        "p99": 688.7,
+        "max": 688.7,
+        "p99IsMax": true
+      },
+      "queryMs": {
+        "n": 30,
+        "min": 6.29,
+        "p95": 7.34,
+        "p99": 31.21,
+        "max": 31.21,
+        "p99IsMax": true
+      },
+      "landingTtfb": {
+        "n": 30,
+        "min": 169.8,
+        "p95": 189.6,
+        "p99": 195.8,
+        "max": 195.8,
+        "p99IsMax": true
+      },
+      "landingLcp": {
+        "n": 30,
+        "min": 296,
+        "p95": 420,
+        "p99": 696,
+        "max": 696,
+        "p99IsMax": true
+      },
+      "verifiedRows": [
+        50
+      ],
+      "firstIds": [
+        "6"
+      ]
+    }
+  }
+}

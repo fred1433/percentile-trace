@@ -1,0 +1,178 @@
+{
+  "at": "2026-09-11T13:49:14.718Z",
+  "path": "postgres over the supavisor session pooler, role trace_app, row level security on",
+  "server": {
+    "version": "17.6",
+    "rows_total": "0",
+    "accounts": "0"
+  },
+  "role": "trace_app",
+  "days": 30,
+  "variants": {
+    "before": {
+      "table": "trace.watchlist_before",
+      "repeats": 20,
+      "usesIndex": true,
+      "scanType": "sequential scan",
+      "rowsRemovedByFilter": 586644,
+      "explainExecutionMs": {
+        "note": "EXPLAIN ANALYZE adds instrumentation overhead. These are shown to compare plans, not as the page's latency.",
+        "observations": [
+          85.702,
+          78.323,
+          79.327,
+          78.25,
+          82.883,
+          78.8,
+          78.368,
+          79.529,
+          78.653,
+          79.157,
+          77.598,
+          78.735,
+          78.262,
+          78.697,
+          78.246,
+          77.884,
+          78.448,
+          78.267,
+          78.375,
+          78.013
+        ]
+      },
+      "sameResult": {
+        "rows": 50,
+        "firstId": "6"
+      }
+    },
+    "after": {
+      "table": "trace.watchlist_after",
+      "repeats": 20,
+      "usesIndex": true,
+      "scanType": "index scan",
+      "rowsRemovedByFilter": 0,
+      "explainExecutionMs": {
+        "note": "EXPLAIN ANALYZE adds instrumentation overhead. These are shown to compare plans, not as the page's latency.",
+        "observations": [
+          0.21,
+          0.188,
+          0.16,
+          0.136,
+          0.133,
+          0.127,
+          0.131,
+          0.153,
+          0.125,
+          0.132,
+          0.138,
+          0.129,
+          0.137,
+          0.129,
+          0.129,
+          0.126,
+          0.129,
+          0.126,
+          0.124,
+          0.129
+        ]
+      },
+      "sameResult": {
+        "rows": 50,
+        "firstId": "6"
+      }
+    },
+    "after-noindex": {
+      "table": "trace.watchlist_after_noindex",
+      "repeats": 20,
+      "usesIndex": false,
+      "scanType": "sequential scan",
+      "rowsRemovedByFilter": 586644,
+      "explainExecutionMs": {
+        "note": "EXPLAIN ANALYZE adds instrumentation overhead. These are shown to compare plans, not as the page's latency.",
+        "observations": [
+          3487.225,
+          119.696,
+          51.534,
+          51.623,
+          51.67,
+          57.977,
+          52.354,
+          51.128,
+          74.615,
+          51.645,
+          51.571,
+          53.043,
+          51.835,
+          51.48,
+          51.939,
+          52.141,
+          51.632,
+          51.813,
+          51.485,
+          51.284
+        ]
+      },
+      "sameResult": {
+        "rows": 50,
+        "firstId": "6"
+      }
+    }
+  },
+  "pgStatStatements": {
+    "note": "Identification and corroboration only. pg_stat_statements exposes aggregates, so no percentile is taken from it. Each entry below is one statement text; the trace id in the SQL comment is what ties an entry to a single request.",
+    "entries": [
+      {
+        "query": "/* pt variant=after-noindex trace=gru1::mvwvl-1789132483126-8e0c53215af7 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after_noindex where event_at >= $1 order by event_at desc, id desc limit $2",
+        "calls": "1047",
+        "rows": "52350",
+        "min_exec_ms": "49.740",
+        "mean_exec_ms": "60.673",
+        "max_exec_ms": "4092.196",
+        "stddev_exec_ms": "165.143",
+        "shared_blks_hit": "9618231",
+        "shared_blks_read": "12075",
+        "variant": "after-noindex",
+        "traceId": "gru1::mvwvl-1789132483126-8e0c53215af7"
+      },
+      {
+        "query": "/* pt variant=before trace=gru1::4b5sq-1789132477812-4fdcd4d2ace9 */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_before where event_at >= $1 order by event_at desc, id desc limit $2",
+        "calls": "1432",
+        "rows": "71560",
+        "min_exec_ms": "76.145",
+        "mean_exec_ms": "88.317",
+        "max_exec_ms": "3799.024",
+        "stddev_exec_ms": "161.109",
+        "shared_blks_hit": "13158000",
+        "shared_blks_read": "17856",
+        "variant": "before",
+        "traceId": "gru1::4b5sq-1789132477812-4fdcd4d2ace9"
+      },
+      {
+        "query": "/* pt variant=after trace=local::rttkfb7c */ select id, account_id, symbol, event_at, event_type, price_cents from trace.watchlist_after where event_at >= $1 order by event_at desc, id desc limit $2",
+        "calls": "1338",
+        "rows": "66860",
+        "min_exec_ms": "0.117",
+        "mean_exec_ms": "0.180",
+        "max_exec_ms": "18.297",
+        "stddev_exec_ms": "0.620",
+        "shared_blks_hit": "36110",
+        "shared_blks_read": "7",
+        "variant": "after",
+        "traceId": "local::rttkfb7c"
+      },
+      {
+        "query": "select id, account_id from trace.watchlist_after where event_at >= $1 order by event_at desc, id desc limit $2",
+        "calls": "1",
+        "rows": "3",
+        "min_exec_ms": "11.627",
+        "mean_exec_ms": "11.627",
+        "max_exec_ms": "11.627",
+        "stddev_exec_ms": "0.000",
+        "shared_blks_hit": "12",
+        "shared_blks_read": "3",
+        "variant": "after",
+        "traceId": null
+      }
+    ]
+  }
+}
