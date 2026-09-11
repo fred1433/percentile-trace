@@ -42,8 +42,8 @@ the verified token makes it an InitPlan computed once, and the index becomes
 reachable.
 
 The third row above is the counterfactual, and it is why the conclusion is not
-"it was the policy". Of the 83.0 ms removed at p95, the policy rewrite accounts
-for 28.6 ms and the index for 54.4 ms. Neither alone was enough, and the index
+"it was the policy". Of the 83.1 ms removed at p95, the policy rewrite accounts
+for 28.6 ms and the index for the remaining 54.5 ms. Neither alone was enough, and the index
 could not have helped while the policy was there.
 
 What a visitor gets, measured from the click to verified rows on screen by a real

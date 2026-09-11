@@ -73,8 +73,8 @@ The third row is the counterfactual, and it is why the conclusion is not simply
 | Policy rewritten, index removed | 63.9 ms |
 | Policy rewritten, index present | 9.5 ms |
 
-Of the 83.0 ms removed at p95, the policy rewrite accounts for 28.6 ms and the
-index for 54.4 ms. Neither alone was enough. The index was already on the table
+Of the 83.1 ms removed at p95, the policy rewrite accounts for 28.6 ms and the
+index for the remaining 54.5 ms. Neither alone was enough. The index was already on the table
 in the first row and the plan never used it, so the index could not have helped
 while the policy was there, and the policy alone would have left the page at
 63.9 ms.
