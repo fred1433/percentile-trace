@@ -1,0 +1,37 @@
+name: perf budget
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  schedule:
+    # Monday 13:00 UTC, so a regression that arrives with a platform change is
+    # found by the guard rather than by a visitor.
+    - cron: "0 13 * * 1"
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Bench the deployment
+        run: >
+          node bench/run.mjs
+          --target ${{ vars.PT_TARGET || 'https://percentile-trace.theaipipe.com' }}
+          --samples 60
+          --from "github actions, ubuntu-latest"
+          --label "ci"
+      - name: Check the committed budget
+        run: node bench/check-budget.mjs
+      - name: Keep the run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-output
+          path: |
+            bench/out/summary.json
+            bench/out/last-run.md
+          retention-days: 30

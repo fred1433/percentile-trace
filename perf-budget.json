@@ -1,0 +1,24 @@
+{
+  "note": "Budgets are set on segments the server measures about itself, never on the end to end total. The total depends on where the bench happens to run, so a budget on it would fail for a reason that has nothing to do with the deployment. What is guarded here is the part the deployment owns.",
+  "guarded": "the indexed arm, which is the fixed one. The no-index arm is deliberately slow and is measured, not guarded.",
+  "budgets": [
+    {
+      "arm": "indexed",
+      "segment": "db",
+      "p95Ms": 12,
+      "why": "one index scan plus the round trip from the function to the database. A plan change or a function moved away from the database both land here first."
+    },
+    {
+      "arm": "indexed",
+      "segment": "conn",
+      "p95Ms": 25,
+      "why": "connection acquisition. A pool that stops being reused shows up as this number rising while the query stays flat."
+    },
+    {
+      "arm": "indexed",
+      "segment": "fn",
+      "p95Ms": 40,
+      "why": "everything the function spends, the query included."
+    }
+  ]
+}
