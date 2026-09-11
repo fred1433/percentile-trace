@@ -22,7 +22,7 @@ export const VARIANTS = {
     title: "Membership subquery",
   },
   after: {
-    table: "watchlist_after",
+    table: "watchlist_before",
     policy: "account_id = (select (auth.jwt() ->> 'account_id')::int)",
     indexed: true,
     title: "Account claim",
